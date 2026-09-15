@@ -1,62 +1,76 @@
-# dou-tone V2
+# dou-tone V2.1
 
-`dou-tone` 是基于 `oil-tone` 重构的个人写作、改写与润色 Skill。V2 保留了 oil-tone 已经成熟的事实边界、自然表达、去 AI 味规则和确定性 lint 思路，同时把能力扩展到正式报告、科研学术、项目技术、教学材料、PPT 和个人内容。
+`dou-tone` 是基于 `oil-tone` 重构的个人写作、改写与润色 Skill。V2.1 重点优化 Agent 自动匹配：让 Skill 在真正需要“润色、改写、重写、整理成稿”时更容易被正确调用，同时避免因为主题涉及科研、项目、教学或文档就误触发。
 
-仓库同时保留原来的 `skills/oil-tone/`，因此旧的 `$oil-tone` 工作流不会失效；新的任务建议优先使用 `$dou-tone`。
+仓库同时保留 `skills/oil-tone/` 作为 V1 兼容层；新的写作转换任务建议优先使用 `dou-tone`。
 
-## 为什么做 V2
+## 定位
 
-`oil-tone` 的优势是让个人成稿保持真实、平实、完整和易读，但它原本主要面向博客、演讲、PPT、产品介绍和社交内容。正式报告、开题论文、项目方案、教学设计等文本不仅需要“自然”，还需要文体规范、结构边界、术语一致性和更严格的事实控制。
+`dou-tone` 只负责文字层的写作与表达规范：
 
-V2 将“个人文风”升级为“个人写作系统”：先判断任务和文体，再决定允许修改到什么程度，最后执行语言优化和质量检查。
+- 校对、润色、深度润色、重写与基于材料成稿；
+- 根据真实用途适配正式报告、学术科研、项目技术、教学、PPT 和个人内容；
+- 保留事实、数字、引用、术语、责任主体和完成状态；
+- 删除空泛 AI 套话、宣传黑话、模糊归因和无信息量升华；
+- 与更具体的专业 Skill、DOCX/PDF/PPTX 等 Artifact 能力组合使用，而不是替代它们。
 
-## V2 能处理什么
+它不应该仅因为主题属于科研、项目或教学而自动介入。纯事实问答、概念解释、资料检索、代码修改、忠实翻译、仅摘要/抽取信息、以及只生成文件格式而未要求文字改写时，不应使用 `dou-tone`。
 
-- 日常表达与草稿整理
-- 工作总结、汇报、建设方案、申请和调研材料
-- 论文、开题报告、研究现状、实验分析和科研汇报
-- AI / Agent / Web / 3D / 软件项目的需求与技术方案
-- 教案、说课稿、教学设计和课堂材料
-- PPT 标题、页面文字和讲稿配套文案
-- 博客、公众号、个人简介、GitHub 项目介绍和社交内容
+## Agent 匹配设计
+
+Agent Skills 在 discovery 阶段主要依赖 `SKILL.md` frontmatter 中的 `name` 和 `description` 判断是否相关。因此 V2.1 把正向触发词和负向边界都写进 description：
+
+- 正向：润色、改写、重写、整理成稿、优化表达、用我的语气；
+- 负向：纯问答、解释、代码修改、忠实翻译、仅摘要或信息提取、纯文件格式生成。
+
+Skill 被激活后仍会执行一次边界判断，防止宿主过度匹配。
 
 ## 改写级别
 
-`dou-tone` 把修改幅度分成五级：
-
-1. **L1 校对**：错别字、标点、明显语病。
-2. **L2 润色**：优化句子和衔接，不改结构和观点。用户只说“润色”时默认使用这一档。
+1. **L1 校对**：错别字、标点、明显语病和格式错误。
+2. **L2 润色**：优化句子和衔接，不改观点、结构和详略比例；用户只说“润色”时默认使用这一档。
 3. **L3 深度润色**：允许调整句序、段落和局部结构，不增加新事实。
-4. **L4 重写**：保留核心事实和意思，重新组织表达。
-5. **L5 成稿**：根据现有材料整理成可直接提交、汇报或发布的完整文本。
+4. **L4 重写**：保留核心事实和意思，重新组织表达与结构。
+5. **L5 成稿**：根据已有材料整理成可直接提交、汇报或发布的完整文本。
 
-任何级别都不允许通过润色编造事实、引用、经历、实验结果或项目能力。
+任何级别都不能通过润色制造新的事实、引用、经历、实验结果、产品能力或完成状态。
 
-## 核心规则
+## 渐进加载
 
-优先级依次是：用户本轮明确指令 → 事实准确与来源边界 → 原文观点、数字、术语和引用 → 文体规范 → 可读性与去 AI 味 → 排版细节。
+`SKILL.md` 只保留所有场景都需要的核心规则。具体文体规范放在 `references/`，Agent 默认只读取一个主场景文件；只有真正的混合任务才再读取一个辅助场景文件。
 
-V2 不再把“去 AI 味”理解成机械禁词。例如“综上”“已有研究表明”“因此”在学术写作中只要承担真实结构或引用功能，就可以正常使用；需要删除的是没有来源、没有信息量或纯粹为了制造语气的套话。
+例如：
+
+- 科研汇报 PPT：`academic-writing.md` + `ppt-writing.md`
+- 项目建设方案：`report-writing.md` + `project-writing.md`
+
+不要一次性加载全部 references。
 
 ## 目录
 
 ```text
-skills/
-├── oil-tone/                 # V1 兼容层，保留原有 Skill 与 tone_lint.py
-└── dou-tone/                 # V2 主 Skill
-    ├── SKILL.md              # 路由、优先级、改写级别、核心规则
-    ├── agents/
-    │   └── openai.yaml
-    ├── references/
-    │   ├── academic-writing.md
-    │   ├── daily-writing.md
-    │   ├── personal-writing.md
-    │   ├── ppt-writing.md
-    │   ├── project-writing.md
-    │   ├── report-writing.md
-    │   └── teaching-writing.md
-    └── scripts/
-        └── dou_lint.py
+.
+├── .github/
+│   └── workflows/
+│       └── validate-skills.yml
+├── evals/
+│   └── dou-tone-matching.md
+└── skills/
+    ├── oil-tone/                 # V1 兼容层
+    └── dou-tone/                 # V2.1 主 Skill
+        ├── SKILL.md
+        ├── agents/
+        │   └── openai.yaml
+        ├── references/
+        │   ├── academic-writing.md
+        │   ├── daily-writing.md
+        │   ├── personal-writing.md
+        │   ├── ppt-writing.md
+        │   ├── project-writing.md
+        │   ├── report-writing.md
+        │   └── teaching-writing.md
+        └── scripts/
+            └── dou_lint.py
 ```
 
 ## 使用示例
@@ -81,34 +95,65 @@ skills/
 使用 $dou-tone 用我的语气把这些材料整理成公众号文章，不虚构个人经历。
 ```
 
+## 官方 Agent Skills 规范
+
+`dou-tone` 遵循 Agent Skills 开放格式：每个 Skill 目录至少包含一个带 YAML frontmatter 的 `SKILL.md`；`name` 与目录名一致，`description` 同时说明能力和调用时机；详细规则放入 `references/`，脚本放入 `scripts/`。
+
+V2.1 的 `SKILL.md` frontmatter 使用：
+
+```yaml
+name: dou-tone
+description: "...做什么 + 什么时候用 + 什么时候不用..."
+license: MIT
+metadata:
+  author: techdou
+  version: "2.1.0"
+  category: writing-conventions
+```
+
+不使用非标准顶层字段，以保持跨 Agent Skills 客户端的可移植性。
+
+## 验证
+
+仓库 CI 会在 PR 和 `main` push 时执行三类检查：
+
+1. 使用 Agent Skills reference validator 校验每个 Skill 的 frontmatter、命名与目录规范；
+2. 编译所有 Python 脚本；
+3. 运行 V1 与 V2 lint self-test。
+
+本地可运行：
+
+```bash
+python -m pip install "git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+skills-ref validate skills/oil-tone
+skills-ref validate skills/dou-tone
+python skills/oil-tone/scripts/tone_lint.py --self-test
+python skills/dou-tone/scripts/dou_lint.py --self-test
+```
+
+Agent 自动匹配的人工回归样例位于：
+
+```text
+evals/dou-tone-matching.md
+```
+
+其中包含“应触发 / 不应触发 / 组合触发”三组测试，后续修改 description 时应同步回归。
+
 ## lint
 
-V1 原有检查器继续保留：
+V1 原有 `tone_lint.py` 继续保留。V2 的 `dou_lint.py` 采用 FAIL / WARN 两级：FAIL 表示比较确定的语言问题，WARN 表示必须结合文体和上下文判断。
 
 ```bash
-python3 skills/oil-tone/scripts/tone_lint.py --self-test
+python skills/dou-tone/scripts/dou_lint.py draft.md
 ```
 
-V2 新增 `dou_lint.py`，继续采用 FAIL / WARN 两级：FAIL 表示已确认的语言问题，WARN 表示需要结合文体和上下文判断。
+lint 只能检查已知文本模式，不能验证事实、引用、科学结论和业务状态，也不能替代完整通读。
 
-```bash
-python3 skills/dou-tone/scripts/dou_lint.py --self-test
-python3 skills/dou-tone/scripts/dou_lint.py draft.md
-```
+## V1 与 V2.1
 
-lint 只检查已知文本模式，不能验证事实、引用、科学结论和业务状态，不能替代完整审阅。
+V1 `oil-tone` 保持兼容，不删除、不破坏已有工作流。V2.1 `dou-tone` 将其成熟的事实边界、自然表达和去 AI 味思路扩展为更适合个人长期使用的写作规范，并加入更严格的 Agent 匹配边界、渐进加载和自动验证。
 
-## 安装
-
-如果宿主支持从 GitHub 安装 Skill，可安装本仓库中的 `skills/dou-tone/`。旧版用户可以继续安装 `skills/oil-tone/`。
-
-仓库：`https://github.com/techdou/oil-tone`
-
-## V1 与 V2 的关系
-
-V2 不是删除 oil-tone，也不是把所有文体强制改成同一种“豆哥语气”。`oil-tone` 继续承担成熟的个人成稿风格规范；`dou-tone` 在此基础上增加文体路由、改写强度、科研与正式文书边界以及更广的场景规则。
-
-后续新增规则时，优先判断它属于核心规则还是某个文体规则，避免不断把所有内容堆进 `SKILL.md`。
+后续新增规则时，优先放入对应 `references/`，只有所有写作场景都必须遵循的内容才进入主 `SKILL.md`。
 
 ## License
 
