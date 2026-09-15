@@ -1,0 +1,5 @@
+interface:
+  display_name: "Dou Tone"
+  short_description: "豆哥的个人写作、正式文书、科研、教学与项目润色系统"
+  brand_color: "#111111"
+  default_prompt: "使用 $dou-tone 判断文体与改写级别，在不改变事实、数字、引用和核心观点的前提下，把这份材料整理成适合真实用途的自然成稿。"
